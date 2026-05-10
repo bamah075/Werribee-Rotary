@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Werribee Rotary — Bulletin HTML Builder</title>
+<style>
+:root{--blue:#17458F;--blue-light:#E8EEF8;--blue-mid:#B5D4F4;--blue-dark:#0C447C;--gold:#F7A800;--gold-light:#FFFBF0;--gold-dark:#92400E;--ink:#1A1A2E;--muted:#6B7280;--pale:#F3F4F6;--surface:#F9FAFB;--border:#E5E7EB;--white:#ffffff;--radius:10px;--radius-sm:6px;font-family:'Segoe UI',system-ui,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#ECEAE7;color:var(--ink);min-height:100vh;}
+.app-header{background:var(--blue);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;}
+.app-logo{display:flex;align-items:center;gap:10px;}
+.app-logo-badge{width:36px;height:36px;border-radius:50%;background:var(--gold);color:var(--blue);font-weight:900;font-size:.85rem;display:flex;align-items:center;justify-content:center;}
+.app-logo-text strong{color:#fff;font-size:.95rem;display:block;}
+.app-logo-text span{color:rgba(255,255,255,.55);font-size:.72rem;}
+.app-tagline{color:rgba(255,255,255,.5);font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;}
+.app-body{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 58px);}
+.sidebar{background:var(--white);border-right:1px solid var(--border);padding:1.25rem;display:flex;flex-direction:column;gap:6px;overflow-y:auto;}
+.sidebar-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);padding:4px 0 8px;border-bottom:1px solid var(--border);margin-bottom:4px;}
+.section-btn{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;text-align:left;transition:all .15s;width:100%;}
+.section-btn:hover{background:var(--blue-light);border-color:#C5D5EF;}
+.section-btn.active{background:var(--blue-light);border-color:var(--blue);border-left:3px solid var(--blue);}
+.section-icon{width:28px;height:28px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;}
+.section-btn-info strong{display:block;font-size:.82rem;color:var(--ink);}
+.section-btn-info span{font-size:.7rem;color:var(--muted);}
+.editor-panel{display:flex;flex-direction:column;}
+.editor-top{display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:0;}
+.form-area{padding:1.25rem;background:var(--white);border-right:1px solid var(--border);overflow-y:auto;max-height:calc(100vh - 260px);}
+.form-area h2{font-size:.95rem;font-weight:700;color:var(--ink);margin-bottom:1rem;padding-bottom:10px;border-bottom:2px solid var(--gold);display:flex;align-items:center;gap:8px;}
+.mode-tabs{display:flex;margin-bottom:1rem;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
+.mode-tab{flex:1;padding:8px 12px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;background:var(--surface);color:var(--muted);transition:all .15s;text-align:center;}
+.mode-tab.active{background:var(--blue);color:#fff;}
+.mode-tab:hover:not(.active){background:var(--blue-light);color:var(--blue-dark);}
+.mode-panel{display:none;}
+.mode-panel.active{display:block;}
+.paste-hint{font-size:.72rem;color:var(--muted);margin-bottom:6px;line-height:1.6;background:var(--pale);padding:8px 10px;border-radius:var(--radius-sm);border-left:3px solid var(--gold);}
+.paste-area{width:100%;min-height:180px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.84rem;font-family:'Courier New',monospace;color:var(--ink);resize:vertical;line-height:1.6;background:#FAFAFA;}
+.paste-area:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(23,69,143,.08);}
+.parse-btn{display:flex;align-items:center;gap:6px;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);padding:9px 16px;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:8px;width:100%;justify-content:center;}
+.parse-btn:hover{background:var(--blue-dark);}
+.parse-result{margin-top:6px;font-size:.75rem;color:#059669;font-weight:600;padding:6px 10px;background:#ECFDF5;border-radius:var(--radius-sm);display:none;}
+.field-group{margin-bottom:.9rem;}
+.field-group label{display:block;font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em;}
+.field-group input,.field-group textarea,.field-group select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:.86rem;color:var(--ink);font-family:inherit;background:var(--white);transition:border-color .15s;}
+.field-group input:focus,.field-group textarea:focus,.field-group select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(23,69,143,.08);}
+.field-group textarea{resize:vertical;min-height:72px;line-height:1.5;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.repeat-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;}
+.repeat-block-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.repeat-block-header strong{font-size:.78rem;color:var(--blue);}
+.btn-remove{background:none;border:none;cursor:pointer;color:#EF4444;font-size:.75rem;font-weight:600;padding:2px 6px;border-radius:4px;}
+.btn-remove:hover{background:#FEE2E2;}
+.btn-add{display:flex;align-items:center;gap:6px;background:var(--blue-light);color:var(--blue-dark);border:1px dashed #C5D5EF;border-radius:var(--radius-sm);padding:8px 12px;font-size:.8rem;font-weight:600;cursor:pointer;width:100%;margin-top:4px;}
+.btn-add:hover{background:#D0DEF5;}
+.output-area{padding:1.25rem;background:#1E1E2E;overflow-y:auto;display:flex;flex-direction:column;}
+.output-area h3{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#7C85A2;margin-bottom:8px;}
+.code-box{flex:1;background:#13131F;border-radius:var(--radius-sm);padding:14px;font-family:'Courier New',monospace;font-size:.76rem;color:#A8C7FA;line-height:1.65;white-space:pre-wrap;word-break:break-all;overflow-y:auto;min-height:200px;max-height:480px;border:1px solid #2D2D42;}
+.copy-btn{margin-top:10px;background:var(--gold);color:var(--gold-dark);border:none;border-radius:var(--radius-sm);padding:10px 20px;font-size:.86rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s;}
+.copy-btn:hover{background:#E09600;}
+.copy-btn.copied{background:#059669;color:#fff;}
+.preview-bar{border-top:1px solid var(--border);background:var(--white);padding:1rem 1.5rem;}
+.preview-bar h3{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:8px;}
+.preview-frame{border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;background:var(--white);max-width:620px;}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:3rem;background:var(--white);}
+.welcome-icon{width:64px;height:64px;border-radius:50%;background:var(--blue-light);color:var(--blue);font-size:1.75rem;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;}
+.welcome h2{font-size:1.1rem;color:var(--ink);margin-bottom:.5rem;}
+.welcome p{font-size:.86rem;color:var(--muted);max-width:300px;line-height:1.6;}
+@media(max-width:900px){.app-body{grid-template-columns:1fr;}.editor-top{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="app-header">
+  <div class="app-logo">
+    <div class="app-logo-badge">WR</div>
+    <div class="app-logo-text"><strong>Rotary Bulletin Builder</strong><span>Werribee Rotary Club</span></div>
+  </div>
+  <div class="app-tagline">ClubRunner HTML Generator</div>
+</div>
+<div class="app-body">
+  <div class="sidebar">
+    <div class="sidebar-label">Choose a section to build</div>
+    <button class="section-btn" onclick="showSection('events')" id="btn-events"><div class="section-icon" style="background:#E8EEF8;">📅</div><div class="section-btn-info"><strong>What's Coming Up</strong><span>Events table with dates</span></div></button>
+    <button class="section-btn" onclick="showSection('president')" id="btn-president"><div class="section-icon" style="background:#FFFBF0;">✉️</div><div class="section-btn-info"><strong>President's Letter</strong><span>Weekly message</span></div></button>
+    <button class="section-btn" onclick="showSection('impact')" id="btn-impact"><div class="section-icon" style="background:#ECFDF5;">📊</div><div class="section-btn-info"><strong>Impact Stats</strong><span>Funds raised, attendees</span></div></button>
+    <button class="section-btn" onclick="showSection('roster')" id="btn-roster"><div class="section-icon" style="background:#FEF3C7;">🗓</div><div class="section-btn-info"><strong>Bingo / Roster</strong><span>Volunteer schedule</span></div></button>
+    <button class="section-btn" onclick="showSection('breakfast')" id="btn-breakfast"><div class="section-icon" style="background:#FEF9C3;">☕</div><div class="section-btn-info"><strong>Breakfast Club</strong><span>Volunteer roster by day</span></div></button>
+    <button class="section-btn" onclick="showSection('anniversaries')" id="btn-anniversaries"><div class="section-icon" style="background:#FBEAF0;">🎂</div><div class="section-btn-info"><strong>Anniversaries</strong><span>Birthdays &amp; milestones</span></div></button>
+    <button class="section-btn" onclick="showSection('markers')" id="btn-markers"><div class="section-icon" style="background:#E8EEF8;">✅</div><div class="section-btn-info"><strong>Five Markers</strong><span>Belonging club card set</span></div></button>
+    <button class="section-btn" onclick="showSection('story')" id="btn-story"><div class="section-icon" style="background:#F3F4F6;">📰</div><div class="section-btn-info"><strong>Community Story</strong><span>Feature article block</span></div></button>
+    <button class="section-btn" onclick="showSection('speaker')" id="btn-speaker"><div class="section-icon" style="background:#EEEDFE;">🎤</div><div class="section-btn-info"><strong>Guest Speaker</strong><span>Speaker profile card</span></div></button>
+    <button class="section-btn" onclick="showSection('footy')" id="btn-footy"><div class="section-icon" style="background:#ECFDF5;">🏉</div><div class="section-btn-info"><strong>AFL Tipping Comp</strong><span>Leaderboard & round results</span></div></button>
+    <button class="section-btn" onclick="showSection('columns')" id="btn-columns"><div class="section-icon" style="background:#F3E8FF;">⬜</div><div class="section-btn-info"><strong>Column Layout</strong><span>1, 2 or 3 column blocks</span></div></button>
+  </div>
+  <div class="editor-panel">
+    <div class="editor-top">
+      <div class="form-area" id="form-area">
+        <div class="welcome">
+          <div class="welcome-icon">🏗️</div>
+          <h2>Pick a section to start</h2>
+          <p>Choose any section from the left. Fill in the fields <strong>or switch to Paste Text</strong> to paste raw content — HTML generates instantly.</p>
+        </div>
+      </div>
+      <div class="output-area">
+        <h3>Generated HTML — copy &amp; paste into ClubRunner</h3>
+        <div class="code-box" id="code-output"><!-- HTML appears here --></div>
+        <button class="copy-btn" id="copy-btn" onclick="copyCode()">📋 Copy HTML to clipboard</button>
+      </div>
+    </div>
+    <div class="preview-bar">
+      <h3>Live preview</h3>
+      <div class="preview-frame" id="preview-frame"><p style="color:#9CA3AF;font-size:.85rem;text-align:center;padding:1rem 0;">Preview appears here as you type</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentSection=null;
+const BLUE='#17458F',GOLD='#F7A800',BLUE_LIGHT='#E8EEF8',BLUE_MID='#B5D4F4',BORDER='#E5E7EB',MUTED='#6B7280',INK='#1A1A2E',SURFACE='#F9FAFB';
+
+function modeTabs(key,hint){
+  return `<div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('${key}','form',this)">✏️ Fill in fields</button>
+    <button class="mode-tab" onclick="switchMode('${key}','paste',this)">📋 Paste text</button>
+  </div>
+  <div class="mode-panel active" id="${key}-form-panel"></div>
+  <div class="mode-panel" id="${key}-paste-panel">
+    <p class="paste-hint">${hint}</p>
+    <textarea class="paste-area" id="${key}-paste-raw" rows="10" placeholder="Paste your raw text here..."></textarea>
+    <button class="parse-btn" onclick="parseSection('${key}')">⚡ Parse &amp; Generate HTML</button>
+    <div class="parse-result" id="${key}-parse-result">✅ Parsed! Switch to fields to review or edit.</div>
+  </div>`;
+}
+
+function switchMode(key,mode,btn){
+  document.querySelectorAll(`#${key}-form-panel,#${key}-paste-panel`).forEach(p=>p.classList.remove('active'));
+  document.getElementById(`${key}-${mode}-panel`).classList.add('active');
+  btn.closest('.mode-tabs').querySelectorAll('.mode-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function showResult(key){
+  const el=document.getElementById(`${key}-parse-result`);
+  if(!el)return;
+  el.style.display='block';
+  setTimeout(()=>{el.style.display='none';},3000);
+}
+
+function showSection(name){
+  currentSection=name;
+  document.querySelectorAll('.section-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+name).classList.add('active');
+  const fa=document.getElementById('form-area');
+  ({events,president,impact,roster,breakfast,anniversaries,markers,story,speaker,footy,columns})[name]?.(fa);
+}
+
+function update(){
+  const gens={events:genEvents,president:genPresident,impact:genImpact,roster:genRoster,breakfast:genBreakfast,anniversaries:genAnniversaries,markers:genMarkers,story:genStory,speaker:genSpeaker,footy:genFooty,columns:genColumns};
+  if(currentSection&&gens[currentSection]){
+    const html=gens[currentSection]();
+    document.getElementById('code-output').textContent=html;
+    document.getElementById('preview-frame').innerHTML=html;
+  }
+}
+
+function parseSection(key){
+  const raw=document.getElementById(`${key}-paste-raw`)?.value||'';
+  ({events:parseEvents,president:parsePresident,impact:parseImpact,roster:parseRoster,breakfast:parseBreakfast,anniversaries:parseAnniversaries,markers:parseMarkers,story:parseStory,speaker:parseSpeaker,footy:parseFooty})[key]?.(raw);
+  showResult(key);
+  // Switch back to form tab
+  const tabs=document.getElementById(`${key}-form-panel`)?.previousElementSibling;
+  if(tabs){const ft=tabs.querySelector('.mode-tab');if(ft)switchMode(key,'form',ft);}
+  update();
+}
+
+function copyCode(){
+  const code=document.getElementById('code-output').textContent;
+  navigator.clipboard.writeText(code).then(()=>{
+    const btn=document.getElementById('copy-btn');
+    btn.textContent='✅ Copied!';btn.classList.add('copied');
+    setTimeout(()=>{btn.innerHTML='📋 Copy HTML to clipboard';btn.classList.remove('copied');},2000);
+  });
+}
+
+/* ── EVENTS ── */
+let eventRows=[
+  {day:'Tuesday',date:'12 May 2026',event:'Club Meeting',topic:'',venue:'The Bridge Hotel',type:'meeting'},
+  {day:'Thursday',date:'21 May 2026',event:'Bunnings BBQ',topic:'Bunnings BBQ',venue:'Bunnings Hoppers Crossing',type:'bbq'},
+];
+function events(fa){
+  fa.innerHTML=`<h2><span>📅</span> What's Coming Up</h2>${modeTabs('events','One row per line: Day, Date, Event, Topic, Venue — separated by commas.\nExample:\nTuesday, 12 May 2026, Club Meeting, Guest Speaker, Bridge Hotel\nThursday, 21 May 2026, Bunnings BBQ, Bunnings BBQ, Hoppers Crossing')}`;
+  document.getElementById('events-form-panel').innerHTML=`<div class="field-group"><label>Subtitle</label><input id="ev-sub" value="Next week — dates subject to change" oninput="update()"></div><div id="ev-rows"></div><button class="btn-add" onclick="addEventRow()">+ Add row</button>`;
+  renderEventRows();update();
+}
+function renderEventRows(){
+  const c=document.getElementById('ev-rows');if(!c)return;
+  c.innerHTML=eventRows.map((r,i)=>`<div class="repeat-block"><div class="repeat-block-header"><strong>Row ${i+1}</strong><button class="btn-remove" onclick="removeEventRow(${i})">✕</button></div>
+    <div class="field-row"><div class="field-group"><label>Day</label><input value="${r.day}" oninput="eventRows[${i}].day=this.value;update()"></div><div class="field-group"><label>Date</label><input value="${r.date}" oninput="eventRows[${i}].date=this.value;update()"></div></div>
+    <div class="field-row"><div class="field-group"><label>Event</label><input value="${r.event}" oninput="eventRows[${i}].event=this.value;update()"></div><div class="field-group"><label>Type</label><select onchange="eventRows[${i}].type=this.value;update()"><option value="meeting" ${r.type==='meeting'?'selected':''}>Meeting (blue)</option><option value="bbq" ${r.type==='bbq'?'selected':''}>Bunnings BBQ (amber)</option><option value="special" ${r.type==='special'?'selected':''}>Special (gold)</option><option value="social" ${r.type==='social'?'selected':''}>Social (teal)</option></select></div></div>
+    <div class="field-row"><div class="field-group"><label>Topic</label><input value="${r.topic}" placeholder="TBA" oninput="eventRows[${i}].topic=this.value;update()"></div><div class="field-group"><label>Venue</label><input value="${r.venue}" oninput="eventRows[${i}].venue=this.value;update()"></div></div>
+  </div>`).join('');
+}
+function addEventRow(){eventRows.push({day:'Tuesday',date:'',event:'Club Meeting',topic:'',venue:'The Bridge Hotel',type:'meeting'});renderEventRows();update();}
+function removeEventRow(i){eventRows.splice(i,1);renderEventRows();update();}
+function parseEvents(raw){
+  const lines=raw.trim().split('\n').filter(l=>l.trim());
+  eventRows=lines.map(l=>{const p=l.split(/[,\t]/).map(s=>s.trim());const e=p[2]||'Club Meeting';const t=/bbq/i.test(e)?'bbq':/christmas|special/i.test(e)?'special':/social/i.test(e)?'social':'meeting';return{day:p[0]||'',date:p[1]||'',event:e,topic:p[3]||'',venue:p[4]||'',type:t};});
+  renderEventRows();
+}
+function bStyle(t){if(t==='bbq')return'background:#FEF3C7;color:#92400E';if(t==='special')return'background:#FFFBF0;color:#B87D00';if(t==='social')return'background:#E1F5EE;color:#085041';return`background:${BLUE_LIGHT};color:#0C447C`;}
+function genEvents(){
+  const sub=document.getElementById('ev-sub')?.value||'Next week — dates subject to change';
+  const rows=eventRows.map((r,i)=>{const bg=i%2===0?'#fff':SURFACE;const tc=r.topic?`<td style="padding:10px 12px;border-bottom:1px solid ${BORDER};background:${bg};color:#374151;font-size:13px;">${r.topic}</td>`:`<td style="padding:10px 12px;border-bottom:1px solid ${BORDER};background:${bg};color:#9CA3AF;font-style:italic;font-size:13px;">TBA</td>`;return`  <tr><td style="padding:10px 12px;border-bottom:1px solid ${BORDER};border-left:4px solid ${GOLD};background:${bg};"><div style="font-weight:700;color:${INK};font-size:14px;font-family:Arial,sans-serif;">${r.day}</div><div style="color:${MUTED};font-size:12px;margin-top:1px;font-family:Arial,sans-serif;">${r.date}</div></td><td style="padding:10px 12px;border-bottom:1px solid ${BORDER};background:${bg};"><span style="display:inline-block;${bStyle(r.type)};font-size:12px;font-weight:700;padding:3px 9px;border-radius:4px;font-family:Arial,sans-serif;">${r.event}</span></td>${tc}<td style="padding:10px 12px;border-bottom:1px solid ${BORDER};background:${bg};color:#374151;font-size:13px;font-family:Arial,sans-serif;">${r.venue}</td></tr>`;}).join('\n');
+  return `<p style="font-family:Arial,sans-serif;font-size:20px;font-weight:700;color:${INK};margin:0 0 6px 0;">What's Coming Up</p>\n<div style="height:3px;background:${GOLD};margin:0 0 6px 0;"></div>\n<p style="font-family:Arial,sans-serif;font-size:13px;color:${MUTED};margin:0 0 14px 0;">${sub}</p>\n<table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;">\n  <thead><tr><th style="background:${BLUE};color:${BLUE_MID};padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;width:26%;">Date</th><th style="background:${BLUE};color:${BLUE_MID};padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;width:20%;">Event</th><th style="background:${BLUE};color:${BLUE_MID};padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;width:27%;">Topic</th><th style="background:${BLUE};color:${BLUE_MID};padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;width:27%;">Venue</th></tr></thead>\n  <tbody>\n${rows}\n  </tbody>\n</table>`;
+}
+
+/* ── PRESIDENT ── */
+function president(fa){
+  fa.innerHTML=`<h2><span>✉️</span> President's Letter</h2>${modeTabs('president',"Paste Lyn's full letter as plain text.\nFirst paragraph = the opening quote shown in italics.\nAll other paragraphs = body text.")}`;
+  document.getElementById('president-form-panel').innerHTML=`
+    <div class="field-group"><label>President Name</label><input id="pr-name" value="Lyn Fava" oninput="update()"></div>
+    <div class="field-group"><label>Title / Role</label><input id="pr-role" value="Club President 2025–26" oninput="update()"></div>
+    <div class="field-group"><label>Opening quote / key message</label><textarea id="pr-quote" rows="3" oninput="update()">"What an extraordinary week for our club. Seeing 1,500 people come together reminded me why we do what we do."</textarea></div>
+    <div class="field-group"><label>Body paragraph (optional)</label><textarea id="pr-body" rows="4" oninput="update()">The community's response was humbling — and it's all down to you and your dedication to service above self.</textarea></div>
+    <div class="field-group"><label>Initials (for avatar)</label><input id="pr-initials" value="LF" maxlength="3" oninput="update()"></div>`;
+  update();
+}
+function parsePresident(raw){
+  const p=raw.trim().split(/\n+/).filter(l=>l.trim());
+  const q=document.getElementById('pr-quote');if(q)q.value=p[0]||'';
+  const b=document.getElementById('pr-body');if(b)b.value=p.slice(1).join(' ');
+}
+function genPresident(){
+  const name=document.getElementById('pr-name')?.value||'';const role=document.getElementById('pr-role')?.value||'';const quote=document.getElementById('pr-quote')?.value||'';const body=document.getElementById('pr-body')?.value||'';const ini=document.getElementById('pr-initials')?.value||'LF';
+  return `<p style="font-family:Arial,sans-serif;font-size:20px;font-weight:700;color:${INK};margin:0 0 6px 0;">President's Letter</p>\n<div style="height:3px;background:${GOLD};margin:0 0 16px 0;"></div>\n<table style="border-collapse:collapse;width:100%;"><tr><td style="width:60px;vertical-align:top;padding-right:14px;"><div style="width:52px;height:52px;border-radius:50%;background:${GOLD};color:${BLUE};font-family:Arial,sans-serif;font-size:1rem;font-weight:900;text-align:center;line-height:52px;border:3px solid ${BLUE};">${ini}</div></td><td style="vertical-align:top;"><p style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:${BLUE};margin:0 0 1px 0;">${name}</p><p style="font-family:Arial,sans-serif;font-size:12px;color:${MUTED};margin:0 0 10px 0;">${role}</p><p style="font-family:Georgia,serif;font-size:15px;color:#374151;font-style:italic;line-height:1.7;margin:0 0 10px 0;border-left:3px solid ${GOLD};padding-left:12px;">${quote}</p>${body?`<p style="font-family:Arial,sans-serif;font-size:14px;color:#374151;line-height:1.7;margin:0;">${body}</p>`:''}</td></tr></table>`;
+}
+
+/* ── IMPACT ── */
+let statRows=[{num:'$14,000',label:'Funds Raised'},{num:'1,500',label:'Attendees'},{num:'40+',label:'Volunteers'}];
+function impact(fa){
+  fa.innerHTML=`<h2><span>📊</span> Impact Stats</h2>${modeTabs('impact','One stat per line: Number — Label\nExample:\n$14,000 — Funds Raised\n1,500 — Attendees\n40+ — Volunteers')}`;
+  document.getElementById('impact-form-panel').innerHTML=`<div id="stat-rows"></div><button class="btn-add" onclick="addStat()">+ Add stat</button>`;
+  renderStatRows();update();
+}
+function renderStatRows(){const c=document.getElementById('stat-rows');if(!c)return;c.innerHTML=statRows.map((r,i)=>`<div class="repeat-block"><div class="repeat-block-header"><strong>Stat ${i+1}</strong><button class="btn-remove" onclick="removeStat(${i})">✕</button></div><div class="field-row"><div class="field-group"><label>Number</label><input value="${r.num}" oninput="statRows[${i}].num=this.value;update()"></div><div class="field-group"><label>Label</label><input value="${r.label}" oninput="statRows[${i}].label=this.value;update()"></div></div></div>`).join('');}
+function addStat(){statRows.push({num:'0',label:'Label'});renderStatRows();update();}
+function removeStat(i){statRows.splice(i,1);renderStatRows();update();}
+function parseImpact(raw){const lines=raw.trim().split('\n').filter(l=>l.trim());statRows=lines.map(l=>{const m=l.match(/^(.+?)[\-–—]\s*(.+)$/);return m?{num:m[1].trim(),label:m[2].trim()}:{num:l.trim(),label:''};});renderStatRows();}
+function genImpact(){const cols=statRows.map(s=>`<td style="text-align:center;padding:16px 12px;border-right:1px solid rgba(23,69,143,.2);"><span style="display:block;font-family:Arial,sans-serif;font-size:1.8rem;font-weight:900;color:${BLUE};line-height:1;">${s.num}</span><span style="font-family:Arial,sans-serif;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(23,69,143,.65);margin-top:3px;display:block;">${s.label}</span></td>`).join('');return `<table style="width:100%;border-collapse:collapse;background:${GOLD};border-radius:8px;overflow:hidden;"><tr>${cols}</tr></table>`;}
+
+/* ── ROSTER ── */
+let rosterRows=[{date:'18 May',name:'Ian Hovey'},{date:'25 May',name:'Ross Smith'},{date:'1 Jun',name:'Enzo Maddalon / Brian Ahmed'},{date:'8 Jun',name:'Brian Ahmed'}];
+function roster(fa){
+  fa.innerHTML=`<h2><span>🗓</span> Bingo / Roster</h2>${modeTabs('roster','One row per line: Date — Volunteer name(s)\nExample:\n18 May — Ian Hovey\n25 May — Ross Smith\n1 Jun — Enzo Maddalon / Brian Ahmed')}`;
+  document.getElementById('roster-form-panel').innerHTML=`<div class="field-group"><label>Section Title</label><input id="ros-title" value="Community Bingo — Volunteer Roster" oninput="update()"></div><div class="field-group"><label>Link text (optional)</label><input id="ros-link-text" value="Full roster" oninput="update()"></div><div class="field-group"><label>Link URL (optional)</label><input id="ros-link-url" placeholder="https://..." oninput="update()"></div><div id="roster-rows"></div><button class="btn-add" onclick="addRosterRow()">+ Add row</button>`;
+  renderRosterRows();update();
+}
+function renderRosterRows(){const c=document.getElementById('roster-rows');if(!c)return;c.innerHTML=rosterRows.map((r,i)=>`<div class="repeat-block"><div class="repeat-block-header"><strong>Row ${i+1}</strong><button class="btn-remove" onclick="removeRosterRow(${i})">✕</button></div><div class="field-row"><div class="field-group"><label>Date</label><input value="${r.date}" oninput="rosterRows[${i}].date=this.value;update()"></div><div class="field-group"><label>Volunteer(s)</label><input value="${r.name}" oninput="rosterRows[${i}].name=this.value;update()"></div></div></div>`).join('');}
+function addRosterRow(){rosterRows.push({date:'',name:''});renderRosterRows();update();}
+function removeRosterRow(i){rosterRows.splice(i,1);renderRosterRows();update();}
+function parseRoster(raw){const lines=raw.trim().split('\n').filter(l=>l.trim());rosterRows=lines.map(l=>{const m=l.match(/^(.+?)[\-–—]\s*(.+)$/);return m?{date:m[1].trim(),name:m[2].trim()}:{date:'',name:l.trim()};});renderRosterRows();}
+function genRoster(){
+  const title=document.getElementById('ros-title')?.value||'';const lt=document.getElementById('ros-link-text')?.value||'';const lu=document.getElementById('ros-link-url')?.value||'';
+  const rows=rosterRows.map((r,i)=>{const bg=i%2===0?'#fff':SURFACE;return`  <tr><td style="padding:7px 12px;font-family:Arial,sans-serif;font-size:13px;color:${MUTED};background:${bg};border-bottom:1px dashed ${BORDER};width:35%;">${r.date}</td><td style="padding:7px 12px;font-family:Arial,sans-serif;font-size:13px;color:#374151;background:${bg};border-bottom:1px dashed ${BORDER};">${r.name}</td></tr>`;}).join('\n');
+  const link=lt&&lu?`\n<p style="margin:10px 0 0 0;"><a href="${lu}" style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:${BLUE};text-decoration:underline;">${lt} →</a></p>`:'';
+  return `<div style="background:#FFFBF0;border-top:3px solid ${GOLD};border-radius:0 0 8px 8px;padding:1rem 1.25rem;"><p style="font-family:Arial,sans-serif;font-size:15px;font-weight:700;color:${BLUE};margin:0 0 10px 0;">🎱 ${title}</p><table style="width:100%;border-collapse:collapse;"><tbody>\n${rows}\n</tbody></table>${link}</div>`;
+}
+
+/* ── BREAKFAST ── */
+let breakfastRows=[
+  {day:'Tuesday',date:'May 12',volunteers:'Alison and Grahame Tavener'},
+  {day:'Wednesday',date:'May 13',volunteers:'Ross Smith, Ravi Chaudhary'},
+  {day:'Thursday',date:'May 14',volunteers:'Anne Randall, Jane Flynn'},
+  {day:'Tuesday',date:'May 19',volunteers:'Lorraine Wagner, Carol Keating'},
+  {day:'Wednesday',date:'May 20',volunteers:'Elizabeth Ross, Norm Johnson'},
+  {day:'Thursday',date:'May 21',volunteers:'Michael Redding, Kathryn Williams'},
+  {day:'Tuesday',date:'May 26',volunteers:'Terry Argent, John Campbell'},
+  {day:'Wednesday',date:'May 27',volunteers:'Ross Smith, Graham Roper'},
+  {day:'Thursday',date:'May 28',volunteers:'Lorraine Wagner, Barb Goullet'},
+];
+function breakfast(fa){
+  fa.innerHTML=`<h2><span>☕</span> Breakfast Club</h2>${modeTabs('breakfast','Paste your roster — one row per line.\nFormat: DAY  DATE  NAME(s)\nExample:\nTUESDAY MAY 12  ALISON AND GRAHAME TAVENER\nWEDNESDAY MAY 13  ROSS SMITH, RAVI CHAUDHARY\nTHURSDAY MAY 14  ANNE RANDALL, JANE FLYNN')}`;
+  document.getElementById('breakfast-form-panel').innerHTML=`<div class="field-group"><label>Month Heading</label><input id="bk-month" value="May" oninput="update()"></div><div class="field-group"><label>Full roster link URL (optional)</label><input id="bk-link" placeholder="https://..." oninput="update()"></div><div id="breakfast-rows"></div><button class="btn-add" onclick="addBreakfastRow()">+ Add row</button>`;
+  renderBreakfastRows();update();
+}
+function renderBreakfastRows(){
+  const c=document.getElementById('breakfast-rows');if(!c)return;
+  c.innerHTML=breakfastRows.map((r,i)=>`<div class="repeat-block"><div class="repeat-block-header"><strong>Row ${i+1}</strong><button class="btn-remove" onclick="removeBreakfastRow(${i})">✕</button></div>
+    <div class="field-row"><div class="field-group"><label>Day</label><select onchange="breakfastRows[${i}].day=this.value;update()"><option value="Tuesday" ${r.day==='Tuesday'?'selected':''}>Tuesday</option><option value="Wednesday" ${r.day==='Wednesday'?'selected':''}>Wednesday</option><option value="Thursday" ${r.day==='Thursday'?'selected':''}>Thursday</option><option value="Friday" ${r.day==='Friday'?'selected':''}>Friday</option></select></div><div class="field-group"><label>Date</label><input value="${r.date}" oninput="breakfastRows[${i}].date=this.value;update()"></div></div>
+    <div class="field-group"><label>Volunteer(s)</label><input value="${r.volunteers}" oninput="breakfastRows[${i}].volunteers=this.value;update()"></div></div>`).join('');
+}
+function addBreakfastRow(){breakfastRows.push({day:'Tuesday',date:'',volunteers:''});renderBreakfastRows();update();}
+function removeBreakfastRow(i){breakfastRows.splice(i,1);renderBreakfastRows();update();}
+function parseBreakfast(raw){
+  const lines=raw.trim().split('\n').filter(l=>l.trim());
+  breakfastRows=lines.map(line=>{
+    const clean=line.replace(/\s+/g,' ').trim();
+    const dm=clean.match(/^(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)/i);
+    const day=dm?dm[1].charAt(0).toUpperCase()+dm[1].slice(1).toLowerCase():'Tuesday';
+    const rest=clean.replace(/^(MONDAY|TUESDAY|WEDNESDAY|THURSDAY|FRIDAY|SATURDAY|SUNDAY)\s*/i,'');
+    const dateM=rest.match(/^([A-Za-z]+\.?\s+\d+)\s+(.*)/);
+    if(dateM)return{day,date:dateM[1].trim(),volunteers:dateM[2].trim()};
+    const parts=rest.split(/\s{2,}/);
+    return{day,date:parts[0]||'',volunteers:parts.slice(1).join(' ').trim()};
+  });
+  renderBreakfastRows();
+}
+function dayBadge(d){if(d==='Wednesday')return'background:#FEF3C7;color:#92400E';if(d==='Thursday')return'background:#ECFDF5;color:#065041';if(d==='Friday')return'background:#F3E8FF;color:#5B21B6';return`background:${BLUE_LIGHT};color:#0C447C`;}
+function genBreakfast(){
+  const month=document.getElementById('bk-month')?.value||'May';const lu=document.getElementById('bk-link')?.value||'';
+  const rows=breakfastRows.map((r,i)=>{const bg=i%2===0?'#fff':SURFACE;return`  <tr><td style="padding:8px 12px;border-bottom:1px solid ${BORDER};border-left:4px solid ${GOLD};background:${bg};width:30%;"><span style="display:inline-block;${dayBadge(r.day)};font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:Arial,sans-serif;">${r.day}</span><div style="color:${MUTED};font-size:12px;margin-top:3px;font-family:Arial,sans-serif;">${r.date}</div></td><td style="padding:8px 12px;border-bottom:1px solid ${BORDER};background:${bg};font-family:Arial,sans-serif;font-size:13px;color:#374151;">${r.volunteers}</td></tr>`;}).join('\n');
+  const link=lu?`\n<p style="margin:10px 0 0 0;"><a href="${lu}" style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:${BLUE};text-decoration:underline;">Full roster →</a></p>`:'';
+  return `<p style="font-family:Arial,sans-serif;font-size:20px;font-weight:700;color:${INK};margin:0 0 4px 0;">Breakfast Club</p>\n<div style="height:3px;background:${GOLD};margin:0 0 14px 0;"></div>\n<div style="background:${BLUE_LIGHT};border-top:3px solid ${BLUE};border-radius:0 0 8px 8px;padding:1rem 1.25rem;"><p style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:${BLUE};margin:0 0 10px 0;">☕ ${month} Roster</p><table style="width:100%;border-collapse:collapse;"><thead><tr><th style="background:${BLUE};color:${BLUE_MID};padding:8px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;width:30%;font-family:Arial,sans-serif;">Day &amp; Date</th><th style="background:${BLUE};color:${BLUE_MID};padding:8px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-family:Arial,sans-serif;">Volunteers</th></tr></thead><tbody>\n${rows}\n</tbody></table>${link}</div>`;
+}
+
+/* ── ANNIVERSARIES ── */
+let annivRows=[{name:'Sonia Chaudhary',type:'birthday',detail:'15 May'},{name:'Philip Purdy',type:'birthday',detail:'12 May'},{name:'Karen Sandlant',type:'anniversary',detail:'Join Anniv. 26 Apr · 53 yrs'}];
+function anniversaries(fa){
+  fa.innerHTML=`<h2><span>🎂</span> Anniversaries &amp; Birthdays</h2>${modeTabs('anniversaries','One person per line. Prefix type then name — date after a dash.\nExample:\nBirthday: Sonia Chaudhary — 15 May\nAnniversary: Karen Sandlant — 26 Apr · 53 yrs\nJoin: Colin Muir — 1 Apr 2003 · 22 yrs')}`;
+  document.getElementById('anniversaries-form-panel').innerHTML=`<div id="anniv-rows"></div><button class="btn-add" onclick="addAnniv()">+ Add person</button>`;
+  renderAnnivRows();update();
+}
+function renderAnnivRows(){const c=document.getElementById('anniv-rows');if(!c)return;c.innerHTML=annivRows.map((r,i)=>`<div class="repeat-block"><div class="repeat-block-header"><strong>Person ${i+1}</strong><button class="btn-remove" onclick="removeAnniv(${i})">✕</button></div><div class="field-group"><label>Name</label><input value="${r.name}" oninput="annivRows[${i}].name=this.value;update()"></div><div class="field-row"><div class="field-group"><label>Type</label><select onchange="annivRows[${i}].type=this.value;update()"><option value="birthday" ${r.type==='birthday'?'selected':''}>🎂 Birthday</option><option value="anniversary" ${r.type==='anniversary'?'selected':''}>💍 Anniversary</option><option value="joindate" ${r.type==='joindate'?'selected':''}>📅 Join Date</option></select></div><div class="field-group"><label>Detail / Date</label><input value="${r.detail}" oninput="annivRows[${i}].detail=this.value;update()"></div></div></div>`).join('');}
+function addAnniv(){annivRows.push({name:'',type:'birthday',detail:''});renderAnnivRows();update();}
+function removeAnniv(i){annivRows.splice(i,1);renderAnnivRows();update();}
+function parseAnniversaries(raw){
+  const lines=raw.trim().split('\n').filter(l=>l.trim());
+  annivRows=lines.map(l=>{
+    let type='birthday';
+    if(/anniv/i.test(l))type='anniversary';
+    else if(/join/i.test(l))type='joindate';
+    const clean=l.replace(/^(birthday|anniversary|join)[:\s]*/i,'').trim();
+    const m=clean.match(/^(.+?)[\-–—]\s*(.+)$/);
+    return m?{name:m[1].trim(),type,detail:m[2].trim()}:{name:clean,type,detail:''};
+  });
+  renderAnnivRows();
+}
+function annivE(t){return t==='birthday'?'🎂':t==='anniversary'?'💍':'📅';}
+function genAnniversaries(){
+  const pills=annivRows.map(r=>`  <div style="display:inline-block;background:${BLUE_LIGHT};border:1px solid #C5D5EF;border-radius:20px;padding:6px 14px;font-family:Arial,sans-serif;font-size:13px;color:#0C447C;margin:4px;">${annivE(r.type)} <strong>${r.name}</strong> — ${r.detail}</div>`).join('\n');
+  return `<p style="font-family:Arial,sans-serif;font-size:20px;font-weight:700;color:${INK};margin:0 0 6px 0;">Anniversaries &amp; Birthdays</p>\n<div style="height:3px;background:${GOLD};margin:0 0 14px 0;"></div>\n<div style="line-height:2;">\n${pills}\n</div>`;
+}
+
+/* ── MARKERS ── */
+let markerRows=[{text:'Members are known by name',sub:'— not just seen.'},{text:'Their skills are used',sub:'— not just tolerated.'},{text:'They have a friend in the room.',sub:''},{text:"They know the club's story",sub:'— and feel part of it.'},{text:"Someone noticed when they weren't there.",sub:''}];
+function markers(fa){
+  fa.innerHTML=`<h2><span>✅</span> Five Markers</h2>${modeTabs('markers','One marker per line. Use a dash to separate the qualifier.\nExample:\nMembers are known by name — not just seen.\nTheir skills are used — not just tolerated.\nThey have a friend in the room.')}`;
+  document.getElementById('markers-form-panel').innerHTML=`<div class="field-group"><label>Section Title</label><input id="mk-title" value="Five Markers of a Belonging Club" oninput="update()"></div><div class="field-group"><label>Reflection question</label><input id="mk-question" value="Which of these five is your club weakest at today?" oninput="update()"></div><div id="marker-rows"></div><button class="btn-add" onclick="addMarker()">+ Add marker</button>`;
+  renderMarkerRows();update();
+}
+function renderMarkerRows(){const c=document.getElementById('marker-rows');if(!c)return;c.innerHTML=markerRows.map((r,i)=>`<div class="repeat-block"><div class="repeat-block-header"><strong>Marker ${i+1}</strong><button class="btn-remove" onclick="removeMarker(${i})">✕</button></div><div class="field-group"><label>Main text</label><input value="${r.text}" oninput="markerRows[${i}].text=this.value;update()"></div><div class="field-group"><label>Sub text (optional)</label><input value="${r.sub}" placeholder="— qualifier..." oninput="markerRows[${i}].sub=this.value;update()"></div></div>`).join('');}
+function addMarker(){markerRows.push({text:'',sub:''});renderMarkerRows();update();}
+function removeMarker(i){markerRows.splice(i,1);renderMarkerRows();update();}
+function parseMarkers(raw){const lines=raw.trim().split('\n').filter(l=>l.trim()&&!/^\s*\d+\.\s*$/.test(l));markerRows=lines.map(l=>{const clean=l.replace(/^\d+[\.\)]\s*/,'').trim();const m=clean.match(/^(.+?)\s+(—\s*.+)$/);return m?{text:m[1].trim(),sub:m[2].trim()}:{text:clean,sub:''};});renderMarkerRows();}
+function genMarkers(){
+  const title=document.getElementById('mk-title')?.value||'';const q=document.getElementById('mk-question')?.value||'';
+  const pairs=[];for(let i=0;i<markerRows.length;i+=2)pairs.push([markerRows[i],markerRows[i+1]]);
+  const cell=r=>`<td style="width:50%;background:${SURFACE};border:1px solid ${BORDER};border-radius:10px;padding:14px;vertical-align:top;"><table style="border-collapse:collapse;width:100%;"><tr><td style="width:36px;vertical-align:top;padding-right:12px;"><div style="width:32px;height:32px;border-radius:50%;background:${BLUE};color:${BLUE_MID};font-family:Arial,sans-serif;font-size:14px;font-weight:700;text-align:center;line-height:32px;">${markerRows.indexOf(r)+1}</div></td><td style="vertical-align:top;"><p style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:${INK};margin:0 0 2px 0;">${r.text}</p>${r.sub?`<p style="font-family:Arial,sans-serif;font-size:12px;color:${MUTED};margin:0;">${r.sub}</p>`:''}</td></tr></table></td>`;
+  const tRows=pairs.map(([a,b])=>`  <tr>${cell(a)}${b?cell(b):`<td style="width:50%;"></td>`}</tr>`).join('\n');
+  return `<p style="font-family:Arial,sans-serif;font-size:20px;font-weight:700;color:${INK};margin:0 0 6px 0;">${title}</p>\n<div style="height:3px;background:${GOLD};margin:0 0 18px 0;"></div>\n<table style="width:100%;border-collapse:separate;border-spacing:8px;margin-bottom:14px;">\n${tRows}\n</table>\n<div style="background:#FFFBF0;border-left:4px solid ${GOLD};border-radius:0 8px 8px 0;padding:12px 16px;"><p style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:#92400E;margin:0;">${q}</p></div>`;
+}
+
+/* ── STORY ── */
+function story(fa){
+  fa.innerHTML=`<h2><span>📰</span> Community Story</h2>${modeTabs('story','Paste your article as plain text.\nLine 1 = headline.\nParagraphs = body text.\nAny paragraph starting with " = pull quote.\nA line starting with http = read more link.')}`;
+  document.getElementById('story-form-panel').innerHTML=`
+    <div class="field-group"><label>Tag / Category</label><input id="st-tag" value="Community Impact" oninput="update()"></div>
+    <div class="field-group"><label>Headline</label><input id="st-headline" value="A Festival That Changed Wyndham Harbour" oninput="update()"></div>
+    <div class="field-group"><label>Paragraph 1</label><textarea id="st-p1" rows="3" oninput="update()">In perfect conditions, Werribee Rotary's Rhythms &amp; Rides for Change drew 1,500 people to Wyndham Harbour, raising $14,000 for Rotary Safe Families.</textarea></div>
+    <div class="field-group"><label>Paragraph 2 / Pull quote (optional)</label><textarea id="st-p2" rows="3" oninput="update()">"It would never have happened without the tremendous work of so many," said President Lyn Fava.</textarea></div>
+    <div class="field-group"><label>Read more link text</label><input id="st-link-text" value="View photos and full story →" oninput="update()"></div>
+    <div class="field-group"><label>Read more URL</label><input id="st-link-url" placeholder="https://..." oninput="update()"></div>`;
+  update();
+}
+function parseStory(raw){
+  const p=raw.trim().split(/\n+/).filter(l=>l.trim());
+  const h=document.getElementById('st-headline');if(h)h.value=p[0]||'';
+  const body=p.slice(1).filter(x=>!x.startsWith('http')&&!/^[""]/.test(x));
+  const p1=document.getElementById('st-p1');if(p1)p1.value=body.join(' ');
+  const quote=p.find(x=>/^[""]/.test(x));
+  const p2=document.getElementById('st-p2');if(p2)p2.value=quote||'';
+  const link=p.find(x=>x.startsWith('http'));
+  const lu=document.getElementById('st-link-url');if(lu&&link)lu.value=link;
+}
+function genStory(){
+  const tag=document.getElementById('st-tag')?.value||'';const h=document.getElementById('st-headline')?.value||'';const p1=document.getElementById('st-p1')?.value||'';const p2=document.getElementById('st-p2')?.value||'';const lt=document.getElementById('st-link-text')?.value||'';const lu=document.getElementById('st-link-url')?.value||'#';
+  return `<div style="background:${BLUE_LIGHT};border-left:4px solid ${BLUE};border-radius:0 8px 8px 0;padding:4px 12px;margin-bottom:12px;display:inline-block;"><span style="font-family:Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#0C447C;">${tag}</span></div>\n<p style="font-family:Georgia,serif;font-size:20px;font-weight:700;color:${BLUE};line-height:1.3;margin:0 0 14px 0;">${h}</p>\n<p style="font-family:Arial,sans-serif;font-size:14px;color:#374151;line-height:1.75;margin:0 0 10px 0;">${p1}</p>\n${p2?`<p style="font-family:Georgia,serif;font-size:14px;color:#374151;line-height:1.75;font-style:italic;border-left:3px solid ${GOLD};padding-left:12px;margin:0 0 12px 0;">${p2}</p>`:''}\n<a href="${lu}" style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:${BLUE};text-decoration:underline;text-underline-offset:3px;">${lt}</a>`;
+}
+
+/* ── SPEAKER ── */
+function speaker(fa){
+  fa.innerHTML=`<h2><span>🎤</span> Guest Speaker</h2>${modeTabs('speaker','Paste speaker details as plain text.\nLine 1: Full name\nLine 2: Title / Organisation\nLine 3: Topic (or prefix with "Topic:")\nRemaining lines: Bio\nAny line starting with http: presentation link')}`;
+  document.getElementById('speaker-form-panel').innerHTML=`
+    <div class="field-group"><label>Speaker Name</label><input id="sp-name" value="Joe Smith" oninput="update()"></div>
+    <div class="field-group"><label>Title / Organisation</label><input id="sp-role" value="CEO, Community Foundation" oninput="update()"></div>
+    <div class="field-group"><label>Topic</label><input id="sp-topic" value="Building Stronger Communities" oninput="update()"></div>
+    <div class="field-group"><label>Short bio</label><textarea id="sp-bio" rows="3" oninput="update()">Joe has spent 20 years working across community organisations in the Wyndham region, leading projects that have supported thousands of families.</textarea></div>
+    <div class="field-group"><label>Initials (for avatar)</label><input id="sp-initials" value="JS" maxlength="3" oninput="update()"></div>
+    <div class="field-group"><label>Presentation link URL (optional)</label><input id="sp-link" placeholder="https://..." oninput="update()"></div>`;
+  update();
+}
+function parseSpeaker(raw){
+  const lines=raw.trim().split('\n').filter(l=>l.trim());
+  const n=document.getElementById('sp-name');if(n)n.value=lines[0]||'';
+  const r=document.getElementById('sp-role');if(r)r.value=lines[1]||'';
+  const tl=lines.find(l=>/^topic[:\s]/i.test(l));
+  const t=document.getElementById('sp-topic');if(t)t.value=tl?tl.replace(/^topic[:\s]*/i,'').trim():lines[2]||'';
+  const link=lines.find(l=>l.startsWith('http'));
+  const sl=document.getElementById('sp-link');if(sl&&link)sl.value=link;
+  const bio=lines.slice(3).filter(l=>!l.startsWith('http')&&!/^topic/i.test(l)).join(' ');
+  const sb=document.getElementById('sp-bio');if(sb)sb.value=bio;
+  const ini=(lines[0]||'').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const si=document.getElementById('sp-initials');if(si)si.value=ini;
+}
+function genSpeaker(){
+  const name=document.getElementById('sp-name')?.value||'';const role=document.getElementById('sp-role')?.value||'';const topic=document.getElementById('sp-topic')?.value||'';const bio=document.getElementById('sp-bio')?.value||'';const ini=document.getElementById('sp-initials')?.value||'JS';const link=document.getElementById('sp-link')?.value||'';
+  return `<p style="font-family:Arial,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#B87D00;margin:0 0 6px 0;">Tonight's Guest Speaker</p>\n<p style="font-family:Arial,sans-serif;font-size:20px;font-weight:700;color:${INK};margin:0 0 16px 0;border-bottom:2px solid ${GOLD};padding-bottom:8px;">${name}</p>\n<table style="border-collapse:collapse;width:100%;margin-bottom:14px;"><tr><td style="width:60px;vertical-align:top;padding-right:16px;"><div style="width:52px;height:52px;border-radius:50%;background:${BLUE};color:${BLUE_MID};font-family:Arial,sans-serif;font-size:1rem;font-weight:700;text-align:center;line-height:52px;">${ini}</div></td><td style="vertical-align:top;"><p style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:${BLUE};margin:0 0 2px 0;">${role}</p><p style="font-family:Arial,sans-serif;font-size:13px;color:${MUTED};margin:0 0 10px 0;">Topic: <strong style="color:${INK};">${topic}</strong></p><p style="font-family:Arial,sans-serif;font-size:13px;color:#374151;line-height:1.7;margin:0;">${bio}</p></td></tr></table>\n${link?`<a href="${link}" style="display:inline-block;background:${BLUE};color:#fff;font-family:Arial,sans-serif;font-size:13px;font-weight:700;padding:8px 18px;border-radius:5px;text-decoration:none;">View Presentation →</a>`:''}`;
+}
+/* ── AFL TIPPING COMP ── */
+let footyRows=[
+  {rank:'1',name:'MezBeth9',r7:'10',r8:'7',score:'58',margin:'216',highlight:'winner'},
+  {rank:'2',name:'Ads',r7:'8',r8:'8',score:'55',margin:'219',highlight:''},
+  {rank:'3',name:'SmithAnn',r7:'7',r8:'10',score:'53',margin:'202',highlight:'bonus'},
+  {rank:'4',name:'philsbombers',r7:'8',r8:'8',score:'53',margin:'204',highlight:''},
+  {rank:'5',name:'tiger1949',r7:'8',r8:'7',score:'53',margin:'208',highlight:''},
+  {rank:'6',name:'Robyn Ballan - 2x $20',r7:'8',r8:'8',score:'53',margin:'222',highlight:'prize'},
+  {rank:'7',name:'SmithRossA',r7:'8',r8:'8',score:'53',margin:'245',highlight:''},
+  {rank:'8',name:'BraddMagpie - $20',r7:'7',r8:'7',score:'52',margin:'244',highlight:'prize'},
+];
+let footyMeta={roundLabel:'Round 6, 7 & 8 — Results',weeklyPrize:'Rd6 Robyn / Rd7 Bradd / Rd8 Robyn',bonusTip:'Rd7 Mary & Rd8 Ann',leader:'MezBeth (Mary)',leaderScore:'58',weeklyAmount:'$20'};
+
+function footy(fa){
+  fa.innerHTML=`<h2><span>🏉</span> AFL Tipping Comp</h2>
+  ${modeTabs('footy',`Paste your leaderboard rows — one player per line.
+Format: RANK  NAME  ROUND7  ROUND8  TOTAL_SCORE  TOTAL_MARGIN
+You can paste straight from a spreadsheet (tab-separated) or type comma-separated.
+Example:
+1, MezBeth9, 10, 7, 58, 216
+2, Ads, 8, 8, 55, 219
+6, Robyn Ballan - 2x $20, 8, 8, 53, 222
+
+Highlighted rows: add * at end for prize winner, ** for bonus tip winner.`)}`;
+  const fp=document.getElementById('footy-form-panel');
+  fp.innerHTML=`
+    <div class="field-group"><label>Round Label</label><input id="ft-round" value="${footyMeta.roundLabel}" oninput="footyMeta.roundLabel=this.value;update()"></div>
+    <div class="field-group"><label>Weekly Prize Amount</label><input id="ft-prize-amt" value="${footyMeta.weeklyAmount}" oninput="footyMeta.weeklyAmount=this.value;update()"></div>
+    <div class="field-group"><label>Weekly Prize Winners</label><input id="ft-prize" value="${footyMeta.weeklyPrize}" oninput="footyMeta.weeklyPrize=this.value;update()"></div>
+    <div class="field-group"><label>Good Tipping / Bonus Tip</label><input id="ft-bonus" value="${footyMeta.bonusTip}" oninput="footyMeta.bonusTip=this.value;update()"></div>
+    <div class="field-group"><label>Current Leader Name</label><input id="ft-leader" value="${footyMeta.leader}" oninput="footyMeta.leader=this.value;update()"></div>
+    <div class="field-group"><label>Leader Score (points)</label><input id="ft-lscore" value="${footyMeta.leaderScore}" oninput="footyMeta.leaderScore=this.value;update()"></div>
+    <div style="margin-bottom:.6rem;font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Row Highlight Key</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;font-size:.75rem;">
+      <span style="background:#FEF08A;padding:2px 8px;border-radius:4px;">winner = yellow</span>
+      <span style="background:#86EFAC;padding:2px 8px;border-radius:4px;">prize = green</span>
+      <span style="background:#FCA5A5;padding:2px 8px;border-radius:4px;">bonus = red/pink</span>
+    </div>
+    <div id="footy-rows"></div>
+    <button class="btn-add" onclick="addFootyRow()">+ Add player</button>`;
+  renderFootyRows(); update();
+}
+
+function renderFootyRows(){
+  const c=document.getElementById('footy-rows'); if(!c) return;
+  c.innerHTML=footyRows.map((r,i)=>`
+    <div class="repeat-block">
+      <div class="repeat-block-header"><strong>#${r.rank} ${r.name}</strong><button class="btn-remove" onclick="removeFootyRow(${i})">✕</button></div>
+      <div class="field-row">
+        <div class="field-group"><label>Rank</label><input value="${r.rank}" oninput="footyRows[${i}].rank=this.value;update()"></div>
+        <div class="field-group"><label>Name</label><input value="${r.name}" oninput="footyRows[${i}].name=this.value;update()"></div>
+      </div>
+      <div class="field-row">
+        <div class="field-group"><label>Rd7 Score</label><input value="${r.r7}" oninput="footyRows[${i}].r7=this.value;update()"></div>
+        <div class="field-group"><label>Rd8 Score</label><input value="${r.r8}" oninput="footyRows[${i}].r8=this.value;update()"></div>
+      </div>
+      <div class="field-row">
+        <div class="field-group"><label>Total Score</label><input value="${r.score}" oninput="footyRows[${i}].score=this.value;update()"></div>
+        <div class="field-group"><label>Total Margin</label><input value="${r.margin}" oninput="footyRows[${i}].margin=this.value;update()"></div>
+      </div>
+      <div class="field-group"><label>Highlight</label>
+        <select onchange="footyRows[${i}].highlight=this.value;update()">
+          <option value="" ${r.highlight===''?'selected':''}>None</option>
+          <option value="winner" ${r.highlight==='winner'?'selected':''}>🟡 Weekly Winner (yellow)</option>
+          <option value="prize" ${r.highlight==='prize'?'selected':''}>🟢 Prize Winner (green)</option>
+          <option value="bonus" ${r.highlight==='bonus'?'selected':''}>🔴 Bonus Tip (pink)</option>
+          <option value="leader" ${r.highlight==='leader'?'selected':''}>🔵 Leader (blue)</option>
+        </select>
+      </div>
+    </div>`).join('');
+}
+function addFootyRow(){ footyRows.push({rank:String(footyRows.length+1),name:'',r7:'',r8:'',score:'',margin:'',highlight:''}); renderFootyRows(); update(); }
+function removeFootyRow(i){ footyRows.splice(i,1); renderFootyRows(); update(); }
+
+function parseFooty(raw){
+  const lines=raw.trim().split('\n').filter(l=>l.trim());
+  // Detect meta lines (no numbers at start)
+  const dataLines=[];
+  lines.forEach(line=>{
+    const clean=line.trim();
+    // Check if line starts with a number — it's a data row
+    if(/^\d+/.test(clean)){
+      // Split by tabs first, then commas, then 2+ spaces
+      let parts=clean.split('\t').map(s=>s.trim());
+      if(parts.length<4) parts=clean.split(',').map(s=>s.trim());
+      if(parts.length<4) parts=clean.split(/\s{2,}/).map(s=>s.trim());
+      const rankStr=parts[0]||'';
+      const rank=rankStr.replace(/\D/g,'');
+      const name=parts[1]||'';
+      const r7=parts[2]||'';
+      const r8=parts[3]||'';
+      const score=parts[4]||'';
+      const margin=parts[5]||'';
+      // Auto-detect highlight: prize keywords in name
+      let highlight='';
+      if(/\$20|\$\d+|prize/i.test(name)&&!/x\s*\$|2\s*x/i.test(name)) highlight='prize';
+      if(/2\s*x|double/i.test(name)) highlight='prize';
+      // Check for asterisk markers
+      if(clean.endsWith('**')) highlight='bonus';
+      else if(clean.endsWith('*')) highlight='winner';
+      // Mark perfect round (score==10 or r7==10 or r8==10)
+      if(r7==='10'||r8==='10') highlight=highlight||'winner';
+      dataLines.push({rank,name:name.replace(/\*+$/,'').trim(),r7,r8,score,margin,highlight});
+    }
+  });
+  if(dataLines.length>0) footyRows=dataLines;
+  renderFootyRows();
+}
+
+function footyRowStyle(h){
+  if(h==='winner') return 'background:#FEF9C3;';
+  if(h==='prize')  return 'background:#DCFCE7;';
+  if(h==='bonus')  return 'background:#FEE2E2;';
+  if(h==='leader') return 'background:#DBEAFE;';
+  return '';
+}
+function footyCellStyle(h,base){
+  const bg=footyRowStyle(h);
+  return bg?`padding:7px 10px;border-bottom:1px solid ${BORDER};${bg}font-family:Arial,sans-serif;font-size:13px;`:
+            `padding:7px 10px;border-bottom:1px solid ${BORDER};background:${base};font-family:Arial,sans-serif;font-size:13px;`;
+}
+
+function genFooty(){
+  const round=document.getElementById('ft-round')?.value||footyMeta.roundLabel;
+  const prize=document.getElementById('ft-prize')?.value||footyMeta.weeklyPrize;
+  const bonus=document.getElementById('ft-bonus')?.value||footyMeta.bonusTip;
+  const leader=document.getElementById('ft-leader')?.value||footyMeta.leader;
+  const lscore=document.getElementById('ft-lscore')?.value||footyMeta.leaderScore;
+  const amt=document.getElementById('ft-prize-amt')?.value||footyMeta.weeklyAmount;
+
+  const thStyle=`background:${BLUE};color:${BLUE_MID};padding:7px 10px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-family:Arial,sans-serif;`;
+  const thStyleR=`background:${BLUE};color:${BLUE_MID};padding:7px 10px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-family:Arial,sans-serif;`;
+
+  const rows=footyRows.map((r,i)=>{
+    const base=i%2===0?'#fff':SURFACE;
+    const cs=h=>footyCellStyle(h,base);
+    const nameStyle=r.highlight?`font-weight:700;`:``; 
+    return `    <tr>
+      <td style="${cs(r.highlight)}color:${MUTED};width:8%;">${r.rank}</td>
+      <td style="${cs(r.highlight)}${nameStyle}color:${INK};width:32%;">${r.name}</td>
+      <td style="${cs(r.highlight)}text-align:right;color:${INK};width:13%;">${r.r7}</td>
+      <td style="${cs(r.highlight)}text-align:right;color:${INK};width:13%;">${r.r8}</td>
+      <td style="${cs(r.highlight)}text-align:right;font-weight:700;color:${BLUE};width:13%;">${r.score}</td>
+      <td style="${cs(r.highlight)}text-align:right;color:${MUTED};width:13%;">${r.margin}</td>
+    </tr>`;
+  }).join('\n');
+
+  return `<p style="font-family:Arial,sans-serif;font-size:20px;font-weight:700;color:${INK};margin:0 0 4px 0;">🏉 Werribee Rotary AFL Tipping Comp</p>
+<div style="height:3px;background:${GOLD};margin:0 0 14px 0;"></div>
+<p style="font-family:Arial,sans-serif;font-size:14px;font-weight:700;color:${BLUE};margin:0 0 10px 0;">${round}</p>
+<table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;margin-bottom:12px;">
+  <tbody>
+    <tr>
+      <td style="padding:8px 12px;vertical-align:top;width:60%;border:1px solid ${BORDER};border-radius:6px;">
+        <p style="font-family:Arial,sans-serif;font-size:13px;font-weight:700;color:${INK};margin:0 0 4px 0;">${amt} Weekly Prize</p>
+        <p style="font-family:Arial,sans-serif;font-size:13px;color:#374151;margin:0;">${prize}</p>
+        ${bonus?`<p style="font-family:Arial,sans-serif;font-size:13px;color:#374151;margin:4px 0 0 0;"><strong>Good Tipping — 9/9 + Bonus:</strong> ${bonus}</p>`:''}
+      </td>
+      <td style="padding:8px 12px;vertical-align:top;text-align:right;border:none;">
+        <p style="font-family:Arial,sans-serif;font-size:12px;font-weight:700;color:${MUTED};margin:0 0 2px 0;text-transform:uppercase;letter-spacing:.06em;">Current Leader</p>
+        <p style="font-family:Arial,sans-serif;font-size:18px;font-weight:900;color:${BLUE};margin:0;">${leader}</p>
+        <p style="font-family:Arial,sans-serif;font-size:13px;color:${MUTED};margin:2px 0 0 0;">${lscore} points</p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<table style="width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px;">
+  <thead>
+    <tr>
+      <th style="${thStyle}width:8%;">Rank</th>
+      <th style="${thStyle}width:32%;">Name</th>
+      <th style="${thStyleR}width:13%;">Rd7</th>
+      <th style="${thStyleR}width:13%;">Rd8</th>
+      <th style="${thStyleR}width:13%;">Score</th>
+      <th style="${thStyleR}width:13%;">Margin</th>
+    </tr>
+  </thead>
+  <tbody>
+${rows}
+  </tbody>
+</table>
+<div style="margin-top:8px;font-family:Arial,sans-serif;font-size:11px;color:${MUTED};">
+  🟡 Weekly round winner &nbsp;|&nbsp; 🟢 Prize winner &nbsp;|&nbsp; 🔴 Bonus tip (9/9)
+</div>`;
+}
+/* ── COLUMN LAYOUT ── */
+let colCount = 2;
+let colData = [
+  { title: '', content: '', bg: 'white', border: true },
+  { title: '', content: '', bg: 'white', border: true },
+];
+const COL_BG = { white: '#ffffff', blue: '#E8EEF8', gold: '#FFFBF0', grey: '#F9FAFB', dark: '#17458F' };
+const COL_TITLE_CLR = { white: '#1A1A2E', blue: '#0C447C', gold: '#92400E', grey: '#1A1A2E', dark: '#ffffff' };
+const COL_TEXT_CLR  = { white: '#374151', blue: '#1A1A2E', gold: '#374151', grey: '#374151', dark: '#B5D4F4' };
+
+function columns(fa) {
+  fa.innerHTML = `<h2><span>⬜</span> Column Layout</h2>`;
+
+  // Column count picker — visual tiles
+  fa.innerHTML += `
+  <div class="field-group">
+    <label>Number of Columns</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px;" id="col-picker">
+      ${[1,2,3].map(n=>`
+        <button onclick="setColCount(${n})" id="col-pick-${n}"
+          style="padding:14px 8px;border-radius:8px;border:2px solid ${n===colCount?'var(--blue)':'var(--border)'};
+          background:${n===colCount?'var(--blue-light)':'var(--surface)'};cursor:pointer;font-family:inherit;">
+          <div style="font-size:1.2rem;margin-bottom:4px;">${'▮'.repeat(n)}</div>
+          <div style="font-size:.78rem;font-weight:700;color:${n===colCount?'var(--blue)':'var(--muted)'};">${n} Column${n>1?'s':''}</div>
+        </button>`).join('')}
+    </div>
+  </div>
+  <div class="field-group">
+    <label>Gap between columns</label>
+    <select id="col-gap" onchange="update()">
+      <option value="0">None</option>
+      <option value="8" selected>Small (8px)</option>
+      <option value="16">Medium (16px)</option>
+      <option value="24">Large (24px)</option>
+    </select>
+  </div>
+  <div id="col-panels"></div>`;
+
+  renderColPanels();
+  update();
+}
+
+function setColCount(n) {
+  colCount = n;
+  // Grow or shrink colData to match
+  while (colData.length < n) colData.push({ title:'', content:'', bg:'white', border:true });
+  colData = colData.slice(0, n);
+  // Re-render picker highlights
+  [1,2,3].forEach(i => {
+    const btn = document.getElementById(`col-pick-${i}`);
+    if (!btn) return;
+    btn.style.borderColor = i===n ? 'var(--blue)' : 'var(--border)';
+    btn.style.background  = i===n ? 'var(--blue-light)' : 'var(--surface)';
+    btn.querySelector('div:last-child').style.color = i===n ? 'var(--blue)' : 'var(--muted)';
+  });
+  renderColPanels();
+  update();
+}
+
+function renderColPanels() {
+  const c = document.getElementById('col-panels'); if (!c) return;
+  const labels = colCount===1 ? ['Column'] : colCount===2 ? ['Left column','Right column'] : ['Left column','Centre column','Right column'];
+  c.innerHTML = colData.map((col, i) => `
+    <div style="border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--surface);">
+      <div style="font-size:.78rem;font-weight:700;color:var(--blue);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;">
+        ${labels[i]}
+      </div>
+      <div class="field-group">
+        <label>Heading (optional)</label>
+        <input value="${col.title.replace(/"/g,'&quot;')}" oninput="colData[${i}].title=this.value;update()">
+      </div>
+      <div class="field-group">
+        <label>Content — paste your HTML or plain text</label>
+        <textarea rows="5" style="font-size:.8rem;" oninput="colData[${i}].content=this.value;update()">${col.content.replace(/</g,'&lt;')}</textarea>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label>Background</label>
+          <select onchange="colData[${i}].bg=this.value;update()">
+            <option value="white"  ${col.bg==='white' ?'selected':''}>White</option>
+            <option value="blue"   ${col.bg==='blue'  ?'selected':''}>Light Blue</option>
+            <option value="gold"   ${col.bg==='gold'  ?'selected':''}>Light Gold</option>
+            <option value="grey"   ${col.bg==='grey'  ?'selected':''}>Light Grey</option>
+            <option value="dark"   ${col.bg==='dark'  ?'selected':''}>Navy Blue</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Border</label>
+          <select onchange="colData[${i}].border=(this.value==='true');update()">
+            <option value="true"  ${col.border ?'selected':''}>Show border</option>
+            <option value="false" ${!col.border?'selected':''}>No border</option>
+          </select>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function genColumns() {
+  const gap = document.getElementById('col-gap')?.value || '8';
+  const pct = colCount===1?'100%':colCount===2?'50%':'33.33%';
+
+  const cells = colData.map(col => {
+    const bg     = COL_BG[col.bg]      || '#ffffff';
+    const titleC = COL_TITLE_CLR[col.bg] || INK;
+    const textC  = COL_TEXT_CLR[col.bg]  || '#374151';
+    const border = col.border ? `border:1px solid ${BORDER};` : '';
+    const goldBar = col.bg==='dark'
+      ? `<div style="height:3px;background:${GOLD};margin-bottom:10px;border-radius:2px;"></div>`
+      : (col.title ? `<div style="height:2px;background:${GOLD};margin-bottom:10px;border-radius:2px;"></div>` : '');
+
+    // Convert plain text to paragraphs if no HTML tags detected
+    let body = col.content;
+    if (body && !/<[a-z]/i.test(body)) {
+      body = body.trim().split(/\n+/).map(p =>
+        `<p style="font-family:Arial,sans-serif;font-size:14px;color:${textC};line-height:1.7;margin:0 0 8px 0;">${p}</p>`
+      ).join('\n');
+    }
+
+    return `<td style="width:${pct};vertical-align:top;padding:${gap}px;">
+  <div style="background:${bg};${border}border-radius:8px;padding:16px;height:100%;">
+    ${col.title ? `<p style="font-family:Arial,sans-serif;font-size:15px;font-weight:700;color:${titleC};margin:0 0 6px 0;">${col.title}</p>${goldBar}` : ''}
+    ${body}
+  </div>
+</td>`;
+  }).join('\n');
+
+  return `<table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+  <tr>
+${cells}
+  </tr>
+</table>`;
+}
+</script>
+</body>
+</html>
